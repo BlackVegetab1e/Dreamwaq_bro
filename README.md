@@ -32,7 +32,7 @@ pip install -e ./rsl_rl
 pip install -e .
 ```
 #### 山猫m20 已经部署实物
-
+![m20](m20_deploy.mp4)
 ## Use
 
 ### 1. train 
@@ -56,7 +56,18 @@ python legged_gym/scripts/play.py --task=go2_handstand --num_envs=50
 python legged_gym/scripts/play.py --task=go2_legstand --num_envs=50
 
 ### problem
-如果你发现轮子不转，而是抬腿，把urdf中的continuous改称revolute,上下限改一下-99999 99999，即可
+如果你发现自己的urdf训练出来轮子不转，而是抬腿，把urdf中的轮子的continuous改为revolute,上下限改一下-99999 99999，即可训练出轮子转的模型
 
-# thanks for the code 
+### 为什么可以训练出轮子转的模型
+
+注意到
+
+action_scale = 0.25
+
+vel_scale = 5.0
+
+故轮子的action更能表现出来故更容易训练出轮子转的模型
+
+
+# 致谢
 https://github.com/XinLang2019/Wheel_Legged_Gym
