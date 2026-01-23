@@ -32,7 +32,7 @@ pip install -e ./rsl_rl
 pip install -e .
 ```
 #### 山猫m20 已经部署实物
-![m20](m20_deploy.mp4)
+![m20](m20_deploy.gif)
 ## Use
 
 ### 1. train 
