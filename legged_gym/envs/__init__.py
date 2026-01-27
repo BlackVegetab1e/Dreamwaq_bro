@@ -38,6 +38,11 @@ from legged_gym.envs.GO2_Stand.GO2_Leggedstand.Go2_legstand import Go2_legstand
 
 from legged_gym.envs.GO2_Stand.GO2_Handstand.Go2_handstand_Config import GO2Cfg_Handstand,GO2CfgPPO_Handstand
 from legged_gym.envs.GO2_Stand.GO2_Handstand.Go2_handstand import Go2_stand
+
+from legged_gym.envs.GO2.go2_config import Go2_Cfg, Go2_PPO
+from legged_gym.envs.GO2.go2 import Go2_Robot
+
+
 import os
 
 from legged_gym.utils.task_registry import task_registry
@@ -45,3 +50,4 @@ from legged_gym.utils.task_registry import task_registry
 task_registry.register( "go2_legstand", Go2_legstand, GO2Cfg_Leggedstand(), GO2CfgPPO_Leggedstand())
 task_registry.register( "go2_handstand", Go2_stand, GO2Cfg_Handstand(), GO2CfgPPO_Handstand())
 task_registry.register( "m20", M20_Robot, M20_Cfg_Yu(), M20_PPO_Yu())
+task_registry.register( "go2", Go2_Robot, Go2_Cfg(), Go2_PPO())

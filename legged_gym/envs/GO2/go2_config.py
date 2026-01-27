@@ -1,12 +1,11 @@
-from legged_gym.envs.base.legged_robot_config import LeggedRobotCfg, LeggedRobotCfgPPO
+from legged_gym.envs.base.base_config import BaseConfig
 
-class GO2Cfg_Leggedstand( LeggedRobotCfg ):
-
+class Go2_Cfg(BaseConfig):
     class env:
         num_envs = 4096
-        num_observations = 46
+        num_observations = 45
         num_obs_hist = 5
-        num_privileged_obs = 266
+        num_privileged_obs = 235
         num_latent_dims=16
         num_explicit_dims=3
         num_history_obs=num_obs_hist*num_observations
@@ -14,18 +13,12 @@ class GO2Cfg_Leggedstand( LeggedRobotCfg ):
         episode_length_s = 20 # episode length in seconds
         env_spacing = 3.  # not used with heightfields/trimeshes 
         send_timeouts=True
-
-    class safety:
-        # safety factors
-        pos_limit = 0.9
-        vel_limit = 1.0
-        torque_limit = 0.9
     class terrain:
-        mesh_type = 'plane' # "heightfield" # none, plane, heightfield or trimesh
+        mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
         horizontal_scale = 0.1 # [m]
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
-        curriculum = False
+        curriculum = True
         static_friction = 1.0
         dynamic_friction = 1.0
         restitution = 0.
@@ -33,7 +26,7 @@ class GO2Cfg_Leggedstand( LeggedRobotCfg ):
         measure_heights = True
         measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
         measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
-        selected = None# select a unique terrain type and pass all arguments
+        selected = False # select a unique terrain type and pass all arguments
         terrain_kwargs = None # Dict of arguments for selected terrain
         max_init_terrain_level = 5 # starting curriculum state
         terrain_length = 8.
@@ -41,22 +34,21 @@ class GO2Cfg_Leggedstand( LeggedRobotCfg ):
         num_rows= 10 # number of terrain rows (levels)
         num_cols = 20 # number of terrain cols (types)
         # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
-        # terrain_proportions = [0.1, 0.1, 0.35, 0.25, 0.2]
-        terrain_proportions = [0.0, 0.0, 0.0, 0.0, 0.0,0.0,1.0]
+        terrain_proportions = [0.1, 0.1, 0.3, 0.3, 0.1]
         # trimesh only:
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
     class commands:
         curriculum = False
-        max_curriculum = 1.
+        max_curriculum = 1.2
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
-        resampling_time = 8. # time before command are changed[s]
-        heading_command = False # if true: compute ang vel command from heading error
+        resampling_time = 10. # time before command are changed[s]
+        heading_command = True # if true: compute ang vel command from heading error
         class ranges:
-            lin_vel_x = [-1.0,1.0] # min max [m/s]
-            lin_vel_y = [-0.5,0.5]   # min max [m/s]
-            ang_vel_yaw = [-1.0,1.0]    # min max [rad/s]
-
-    class init_state( LeggedRobotCfg.init_state ):
+            lin_vel_x = [-1.0,1.2] # min max [m/s]
+            lin_vel_y = [-0.6,0.6]   # min max [m/s]
+            ang_vel_yaw = [-1, 1]    # min max [rad/s]
+            heading = [-3.14, 3.14]
+    class init_state:
         pos = [0.0, 0.0, 0.42] # x,y,z [m]
         rot = [0.0, 0.0, 0.0, 1.0] # x,y,z,w [quat]
         lin_vel = [0.0, 0.0, 0.0]  # x,y,z [m/s]
@@ -76,30 +68,14 @@ class GO2Cfg_Leggedstand( LeggedRobotCfg ):
             'FR_calf_joint': -1.5,  # [rad]
             'RR_calf_joint': -1.5,    # [rad]
         }
-        descire_joint_angles = { # = target angles [rad] when action = 0.0
-            'FL_hip_joint': 0.,   # [rad]
-            'RL_hip_joint': 0.,   # [rad]
-            'FR_hip_joint': 0. ,  # [rad]
-            'RR_hip_joint': 0.,   # [rad]
 
-            'FL_thigh_joint': -0.7,     # [rad]
-            'RL_thigh_joint': 0.8,#1.,   # [rad]
-            'FR_thigh_joint': -0.7,     # [rad]
-            'RR_thigh_joint': 0.8,#1.,   # [rad]
-
-            'FL_calf_joint': -1.75,   # [rad]
-            'RL_calf_joint': -1.5,    # [rad]
-            'FR_calf_joint': -1.75,  # [rad]
-            'RR_calf_joint': -1.5,    # [rad]
-                }
-    class control( LeggedRobotCfg.control ):
+    class control:
         # PD Drive parameters:
         control_type = 'P'
         stiffness = {'joint': 25.}  # [N*m/rad]
         damping = {'joint': 0.5}     # [N*m*s/rad]
-        # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
-        # decimation: Number of control action updates @ sim DT per policy DT
+        vel_scale = 5.0
         decimation = 4
     class asset:
         file = '{LEGGED_GYM_ROOT_DIR}/resources/robots/go2/urdf/go2.urdf'
@@ -127,74 +103,61 @@ class GO2Cfg_Leggedstand( LeggedRobotCfg ):
         max_linear_velocity = 1000.
         armature = 0.
         thickness = 0.01
+
     class domain_rand:
-        push_towards_goal=True
         randomize_friction = True
         friction_range = [0.2,1.25]
-
         randomize_restitution = True
-        restitution_range = [0.0, 0.5]
+        restitution_range = [0.0,1.0]
         push_robots = True
-        push_interval_s = 8
+        push_interval_s = 10
         max_push_vel_xy = 1.0
-        max_push_ang_vel = 1.0
-
+        max_push_ang_vel = 0.6
         randomize_base_mass = True
         added_base_mass_range = [-1,2]
-
         randomize_link_mass = True
         multiplied_link_mass_range = [0.9, 1.1]
-
         randomize_base_com = True
         added_base_com_range = [-0.05, 0.05]
-
         randomize_pd_gains = True
         stiffness_multiplier_range = [0.85, 1.15]  
         damping_multiplier_range = [0.85, 1.15]     
-        torque_multiplier_range=[0.85, 1.15]   
-
+        torque_multiplier_range=[0.85, 1.15]  
 
         randomize_motor_zero_offset = True
         motor_zero_offset_range = [-0.035, 0.035] # Offset to add to the motor angles
 
-        
         add_cmd_action_latency = True
         randomize_cmd_action_latency = True
         range_cmd_action_latency = [0, 3]
 
     class rewards:
         class scales:
-            termination = -0.0
-            tracking_lin_vel = 2.0
-            tracking_ang_vel = 1.0
-            lin_vel_z = -2
-            ang_vel_xy = -0.05
-            orientation = -0.5
-            torques = -0.0001
-            dof_acc = -2.5e-7
+            termination = -0.8 # 25/8/23 zsy说不用加
+            tracking_lin_vel = 3.0 # 惩罚当前机器人在X、Y方向速度与命令不一致
+            tracking_ang_vel = 1.5 # 惩罚当前机器人在角度转向速度与命令不一致
+            lin_vel_z = -2 # 惩罚机器人在Z轴上的速度 对应现象为机器人上下起伏很大
+            ang_vel_xy = -0.05 # 惩罚机器人在X轴和Y轴上的角速度 对应现象为遏制机器人左右晃动和前后晃动
+            orientation = -0.5 # 强烈鼓励机器人与初始姿态的基座方向一致
             base_height=-10.0
-            base_height_stand=2.0
+            torques = -0.000005#
+            dof_vel = -1e-6
+            dof_acc = -1e-7
             collision = -1.
-            action_rate = -0.025
-            still=-0.05
-            still_stand=-0.05
-            default_hip_pos=-0.1
-            # ang_xz=-0.5
-            contact=0.3
-            # feet_air_time=2.0
-            feet_air_time_stand=2.0
-            feet_contact_forces=-0.002
-            symmetric_joints=-0.1
-            handstand_feet_height_exp=5.0
-            default_pos_reward=0.5
-        only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
+            # stumble = -0.1
+            action_rate = -0.011
+            stand_still=-0.5
+            dof_pos_limits = -5.0
+            hip_default = -0.5
+            # run_still=-0.05 # 足式 不能这样
+        only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
         soft_dof_pos_limit = 0.9 # percentage of urdf limits, values above this limit are penalized
-        soft_dof_vel_limit = 1.
-        soft_torque_limit = 1.
-        base_height_target_stand = 0.52#0.25
-        base_height_target = 0.34
+        soft_dof_vel_limit = 0.9
+        soft_torque_limit = 0.9
+        base_height_target = 0.52
         max_contact_force = 200. # forces above this value are penalized
+
     class normalization:
         class obs_scales:
             lin_vel = 2.0
@@ -241,8 +204,7 @@ class GO2Cfg_Leggedstand( LeggedRobotCfg ):
             default_buffer_size_multiplier = 5
             contact_collection = 2 # 0: never, 1: last sub-step, 2: all sub-steps (default=2)
 
-
-class GO2CfgPPO_Leggedstand(LeggedRobotCfgPPO):
+class Go2_PPO( BaseConfig ):
     seed = 1
     runner_class_name = 'DreamWaQRunner'
     class policy:
@@ -264,15 +226,15 @@ class GO2CfgPPO_Leggedstand(LeggedRobotCfgPPO):
         lam = 0.95
         desired_kl = 0.01
         max_grad_norm = 1.0
-        num_obs=46
+        num_obs=45
     class runner:
         policy_class_name = "ActorCriticDreamWaQ"
         algorithm_class_name = "PPO_DreamWaQ"
         num_steps_per_env = 24 # per iteration
         run_name = ''
-        experiment_name = 'go2_leggedstand'
+        experiment_name = 'go2_up'
         save_interval = 100 
-        max_iterations = 20000
+        max_iterations = 300000
         resume = False
         load_run = -1 # -1 = last run
         checkpoint = -1 # -1 = last saved model
