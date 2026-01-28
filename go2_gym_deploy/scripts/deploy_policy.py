@@ -6,10 +6,10 @@ import sys
 #
 sys.path.append("/home/unitree/DreamWaq_mjc/legged_gym")
 
-from go1_gym_deploy.utils.deployment_runner import DeploymentRunner
-from go1_gym_deploy.envs.lcm_agent import LCMAgent
-from go1_gym_deploy.utils.cheetah_state_estimator import StateEstimator
-from go1_gym_deploy.utils.command_profile import *
+from go2_gym_deploy.utils.deployment_runner import DeploymentRunner
+from go2_gym_deploy.envs.lcm_agent import LCMAgent
+from go2_gym_deploy.utils.cheetah_state_estimator import StateEstimator
+from go2_gym_deploy.utils.command_profile import *
 
 import pathlib
 
@@ -51,7 +51,7 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     hardware_agent = LCMAgent(cfg_for_agent, se, command_profile)
     se.spin()
 
-    from go1_gym_deploy.envs.history_wrapper import HistoryWrapper
+    from go2_gym_deploy.envs.history_wrapper import HistoryWrapper
     hardware_agent = HistoryWrapper(hardware_agent)
 
     policy = load_policy(logdir)

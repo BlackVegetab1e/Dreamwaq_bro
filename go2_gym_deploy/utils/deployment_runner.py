@@ -5,7 +5,7 @@ import os
 import numpy as np
 import torch
 
-from go1_gym_deploy.utils.logger import MultiLogger
+from go2_gym_deploy.utils.logger import MultiLogger
 
 
 class DeploymentRunner:
