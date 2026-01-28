@@ -39,7 +39,30 @@ from legged_gym.utils.helpers import class_to_dict,export_policy_as_dwaq,export_
 import numpy as np
 import torch
 import pickle
-
+class terrain:
+    mesh_type = 'trimesh' # "heightfield" # none, plane, heightfield or trimesh
+    horizontal_scale = 0.1 # [m]
+    vertical_scale = 0.005 # [m]
+    border_size = 25 # [m]
+    curriculum = True
+    static_friction = 1.0
+    dynamic_friction = 1.0
+    restitution = 0.
+    # rough terrain only:
+    measure_heights = True
+    measured_points_x = [-0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8] # 1mx1.6m rectangle (without center line)
+    measured_points_y = [-0.5, -0.4, -0.3, -0.2, -0.1, 0., 0.1, 0.2, 0.3, 0.4, 0.5]
+    selected = False # select a unique terrain type and pass all arguments
+    terrain_kwargs = None # Dict of arguments for selected terrain
+    max_init_terrain_level = 5 # starting curriculum state
+    terrain_length = 8.
+    terrain_width = 8.
+    num_rows= 10 # number of terrain rows (levels)
+    num_cols = 20 # number of terrain cols (types)
+    # terrain types: [smooth slope, rough slope, stairs up, stairs down, discrete]
+    terrain_proportions = [0.1, 0.1, 0.3, 0.3, 0.1]
+    # trimesh only:
+    slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
 
 def play(args):
     env_cfg, train_cfg = task_registry.get_cfgs(name=args.task)
@@ -48,9 +71,10 @@ def play(args):
 
     # override some parameters for testing
     env_cfg.env.num_envs = min(env_cfg.env.num_envs, 50)
-    env_cfg.terrain.num_rows = 5
-    env_cfg.terrain.num_cols = 5
-    env_cfg.terrain.curriculum = False
+    # env_cfg.terrain.num_rows = 5
+    # env_cfg.terrain.num_cols = 5
+    # env_cfg.terrain.curriculum = False
+    env_cfg.terrain = terrain
     env_cfg.noise.add_noise = False
     # env_cfg.domain_rand.randomize_friction = False
     env_cfg.domain_rand.push_robots = False
@@ -63,10 +87,16 @@ def play(args):
     ppo_runner, train_cfg = task_registry.make_alg_runner(env=env, name=args.task, args=args, train_cfg=train_cfg)
     policy = ppo_runner.get_inference_policy(device=env.device)
     
-    # export policy as a jit module (used to run it from C++)
+    # # export policy as a jit module (used to run it from C++)
+    # if EXPORT_POLICY:
+    #     path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
+    #     # export_policy_as_dwaq(ppo_runner.alg.actor_critic,path)
+    #     print('Exported policy as jit script to: ', path)
     if EXPORT_POLICY:
+        from legged_gym.utils.helpers import export_policy_as_jit_actor,export_policy_as_jit_encoder,class_to_dict
         path = os.path.join(LEGGED_GYM_ROOT_DIR, 'logs', train_cfg.runner.experiment_name, 'exported', 'policies')
-        export_policy_as_dwaq(ppo_runner.alg.actor_critic,path)
+        export_policy_as_jit_actor(ppo_runner.alg.actor_critic, path)
+        export_policy_as_jit_encoder(ppo_runner.alg.actor_critic.vae,path)
         print('Exported policy as jit script to: ', path)
 
     logger = Logger(env.dt)
@@ -80,9 +110,10 @@ def play(args):
     img_idx = 0
 
     for i in range(10*int(env.max_episode_length)):
-        env.commands[:, 0]=1.0
+        env.commands[:, 0]=0.8
         env.commands[:, 1]=0.
-        env.commands[:, 2]=0.
+        env.commands[:, 2]=0.0
+
         actions = policy(obs.detach(),obs_hist.detach())
         obs, _,  obs_hist,_, rews, dones, infos = env.step(actions.detach())
         if RECORD_FRAMES:

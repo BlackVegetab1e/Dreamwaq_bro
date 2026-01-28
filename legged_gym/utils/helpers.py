@@ -198,37 +198,59 @@ def export_policy_as_jit_actor(actor_critic, path):
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path)
 
-def export_policy_as_jit_encoder(actor_critic, path):
+def export_policy_as_jit_encoder(vae, path):
         os.makedirs(path, exist_ok=True)
         path1 = os.path.join(path, 'encoder_dwaq.pt')
-        model = copy.deepcopy(actor_critic.encoder).to('cpu')
+        model = copy.deepcopy(vae.encoder).to('cpu')
+        print('save1')
         print("encoder model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path1)
 
         path2 = os.path.join(path, 'latent_mu_dwaq.pt')
-        model = copy.deepcopy(actor_critic.encode_mean_latent).to('cpu')
+        model = copy.deepcopy(vae.encode_mean_latent).to('cpu')
+        print('save2')
         print("latent mu model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path2)
 
+        path6 = os.path.join(path, 'encoder_mu_dwaq.pt')
+        model = copy.deepcopy(vae.encode_mean_latent).to('cpu')
+        print('save3')
+        print("encoder_mu_dwaq model",model)
+        traced_script_module = torch.jit.script(model)
+        traced_script_module.save(path6)
+
+
+        path7 = os.path.join(path, 'encoder_var_dwaq.pt')
+        model = copy.deepcopy(vae.encode_logvar_latent).to('cpu')
+        print('save4')
+        print("encoder_var_dwaq model",model)
+        traced_script_module = torch.jit.script(model)
+        traced_script_module.save(path7)
+
+
+
         path3 = os.path.join(path, 'latent_var_dwaq.pt')
-        model = copy.deepcopy(actor_critic.encode_logvar_latent).to('cpu')
+        model = copy.deepcopy(vae.encode_logvar_latent).to('cpu')
         print("latent var model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path3)
 
         path4 = os.path.join(path, 'vel_mu_dwaq.pt')
-        model = copy.deepcopy(actor_critic.encode_mean_vel).to('cpu')
+        model = copy.deepcopy(vae.encode_mean_vel).to('cpu')
         print("vel mu model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path4)
 
         path5 = os.path.join(path, 'vel_var_dwaq.pt')
-        model = copy.deepcopy(actor_critic.encode_logvar_vel).to('cpu')
+        model = copy.deepcopy(vae.encode_logvar_vel).to('cpu')
         print("vel var model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path5)
+
+
+
 
 
 
@@ -326,7 +348,7 @@ class PolicyExporterDWAQ(torch.nn.Module):
         onnx_file = os.path.join(path, 'policy_dwaq.onnx')
 
         # 1. 构造 dummy 输入（batch=1，长度与你训练时一致）
-        seq_len = 285 +57                # 请改成你真实的 obs_history 总长度
+        seq_len = 225 +57                # 请改成你真实的 obs_history 总长度
         dummy_obs = torch.randn(1, seq_len)
 
         # 2. 切换到 CPU、eval、无梯度

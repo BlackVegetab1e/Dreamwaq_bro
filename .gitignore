@@ -48,6 +48,9 @@ Thumbs.db
 *.mov
 *.wmv
 *.onnx
+*.zip
+*.pkl
+*.pt
 
 # VS Code
 .vscode
