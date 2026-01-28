@@ -136,17 +136,7 @@ class LCMAgent():
         self.body_linear_vel = self.se.get_body_linear_vel()
         self.body_angular_vel = self.se.get_body_angular_vel()
 
-        # ob = np.concatenate((self.body_angular_vel.reshape(1,-1)*self.obs_scales["ang_vel"], 
-        #                      self.gravity_vector.reshape(1, -1),
-        #                      self.commands[:,:3] * self.commands_scale,
-        #                      (self.dof_pos - self.default_dof_pos).reshape(1, -1) * self.obs_scales["dof_pos"],
-        #                      self.dof_vel.reshape(1, -1) * self.obs_scales["dof_vel"],
-        #                      torch.clip(self.actions, -self.cfg["normalization"]["clip_actions"],
-        #                                 self.cfg["normalization"]["clip_actions"]).cpu().detach().numpy().reshape(1, -1)
-        #                      ), axis=1)
-        
-        # scale only the first 3 command entries (lin_x, lin_y, yaw)
-        # ensure commands_scale has at least 3 entries (fallback to ones if not)
+
         if len(self.commands_scale) < 3:
             commands_scale_first3 = np.ones(3)
         else:
@@ -162,43 +152,6 @@ class LCMAgent():
                             torch.clip(self.actions, -self.cfg["normalization"]["clip_actions"],
                                         self.cfg["normalization"]["clip_actions"]).cpu().detach().numpy().reshape(1, -1)
                             ), axis=1)
-
-        # if self.cfg["env"]["observe_two_prev_actions"]:
-        #     ob = np.concatenate((ob,
-        #                     self.last_actions.cpu().detach().numpy().reshape(1, -1)), axis=1)
-
-        # if self.cfg["env"]["observe_clock_inputs"]:
-        #     ob = np.concatenate((ob,
-        #                     self.clock_inputs), axis=1)
-        #     # print(self.clock_inputs)
-
-        # if self.cfg["env"]["observe_vel"]:
-        #     ob = np.concatenate(
-        #         (self.body_linear_vel.reshape(1, -1) * self.obs_scales["lin_vel"],
-        #          self.body_angular_vel.reshape(1, -1) * self.obs_scales["ang_vel"],
-        #          ob), axis=1)
-
-        # if self.cfg["env"]["observe_only_lin_vel"]:
-        #     ob = np.concatenate(
-        #         (self.body_linear_vel.reshape(1, -1) * self.obs_scales["lin_vel"],
-        #          ob), axis=1)
-
-        # if self.cfg["env"]["observe_yaw"]:
-        #     heading = self.se.get_yaw()
-        #     ob = np.concatenate((ob, heading.reshape(1, -1)), axis=-1)
-
-        # self.contact_state = self.se.get_contact_state()
-        # if "observe_contact_states" in self.cfg["env"].keys() and self.cfg["env"]["observe_contact_states"]:
-        #     ob = np.concatenate((ob, self.contact_state.reshape(1, -1)), axis=-1)
-
-        # if "terrain" in self.cfg.keys() and self.cfg["terrain"]["measure_heights"]:
-        #     robot_height = 0.25
-        #     self.measured_heights = np.zeros(
-        #         (len(self.cfg["terrain"]["measured_points_x"]), len(self.cfg["terrain"]["measured_points_y"]))).reshape(
-        #         1, -1)
-        #     heights = np.clip(robot_height - 0.5 - self.measured_heights, -1, 1.) * self.obs_scales["height_measurements"]
-        #     ob = np.concatenate((ob, heights), axis=1)
-
 
         return torch.tensor(ob, device=self.device).float()
 

@@ -81,7 +81,7 @@ class DeploymentRunner:
                 print(f"About to calibrate; the robot will stand [Press R2 to calibrate]")
                 while wait:
                     self.button_states = self.command_profile.get_buttons()
-                    if self.command_profile.state_estimator.right_lower_right_switch_pressed:
+                    if self.command_profile.state_estimator.right_lower_right_switch_pressed or True:
                         self.command_profile.state_estimator.right_lower_right_switch_pressed = False
                         break
 
@@ -110,7 +110,7 @@ class DeploymentRunner:
                 print("Starting pose calibrated [Press R2 to start controller]")
                 while True:
                     self.button_states = self.command_profile.get_buttons()
-                    if self.command_profile.state_estimator.right_lower_right_switch_pressed:
+                    if self.command_profile.state_estimator.right_lower_right_switch_pressed or True:
                         self.command_profile.state_estimator.right_lower_right_switch_pressed = False
                         break
 

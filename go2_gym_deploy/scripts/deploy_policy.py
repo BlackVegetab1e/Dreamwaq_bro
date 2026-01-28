@@ -17,20 +17,12 @@ lc = lcm.LCM("udpm://239.255.76.67:7667?ttl=255")
 
 def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     # load agent
-    dirs = glob.glob(f"../../runs/{label}/*")
-    #logdir = sorted(dirs)[0]
-    logdir = "../../logs/rough_go2/exported/policies"
 
-    # with open(logdir+"/parameters.pkl", 'rb') as file:
-    #     pkl_cfg = pkl.load(file)
-    #     print(pkl_cfg.keys())
-    #     cfg = pkl_cfg["Cfg"]
-    #     print(cfg.keys())
-    with open(logdir + "/parameters.pkl", 'rb') as file:
-        pkl_cfg = pkl.load(file)
-        print(pkl_cfg.keys())
-        cfg = pkl_cfg["Cfg"]
+    logdir = "../../logs/Go2/20260128"
 
+    from envs.GO2.go2_config import Go2_Cfg
+
+    cfg = Go2_Cfg()
     # 如果 cfg 里没有 control、sim 等 env 字段，但包含 'env'（即 train_cfg + env_cfg 的结构），
     # 则使用 cfg['env'] 作为传给 LCMAgent 的环境配置。
     if isinstance(cfg, dict) and "control" not in cfg and "env" in cfg:
@@ -39,7 +31,7 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     else:
         cfg_for_agent = cfg
 
-    print(cfg_for_agent.keys())
+    print(cfg_for_agent)
 
 
     se = StateEstimator(lc)
@@ -74,25 +66,52 @@ def load_and_run_policy(label, experiment_name, max_vel=1.0, max_yaw_vel=1.0):
     deployment_runner.run(max_steps=max_steps, logging=True)
 
 def load_policy(logdir):
-    actor=torch.jit.load(logdir + '/actor_dwaq.pt')
-    encoder=torch.jit.load(logdir + "/encoder_dwaq.pt")
-    fc_mu = torch.jit.load(logdir + '/encoder_mu_dwaq.pt')
-    fc_var = torch.jit.load(logdir + '/encoder_var_dwaq.pt')
+    actor=torch.jit.load(logdir + '/actor.pt')
+    encoder=torch.jit.load(logdir + "/encoder.pt")
+    encode_mean_latent=torch.jit.load(logdir + '/encode_mean_latent.pt')
+    encode_logvar_latent=torch.jit.load(logdir + '/encode_logvar_latent.pt')
+    encode_mean_vel=torch.jit.load(logdir + '/encode_mean_vel.pt')
+    encode_logvar_vel=torch.jit.load(logdir + '/encode_logvar_vel.pt')
 
-     
+
     def policy(obs, info):
-        i = 0
+        def act_inference(observations,obs_history):
+            _,_,_,latent= cenet_forward(obs_history)
+            mean_vel,logvar_vel,mean_latent,logvar_latent=latent
+            observations = torch.cat((mean_vel,mean_latent,observations),dim=-1)
+            actions_mean = actor(observations)
+            return actions_mean
+
+        def reparameterise(mean,logvar):
+            var = torch.exp(logvar*0.5)
+            code_temp = torch.randn_like(var)
+            return mean + var*code_temp
         
-        h = encoder(obs["obs_history"].to('cpu').float())
-        mu = fc_mu(h)
-        log_var = fc_var(h)
-        std = torch.exp(0.5 * log_var)
-        eps = torch.randn_like(std)
-        latent = mu + eps * std
-        print(obs)
-        # action = actor(torch.cat((obs["obs"].to('cpu'), latent), dim=-1))
-        action = actor(torch.cat((latent, obs["obs"].to('cpu')), dim=-1))
-        info['latent'] = latent
+        def cenet_forward(obs_history):
+            encoded = encoder(obs_history)
+            mean_latent = encode_mean_latent(encoded)
+            logvar_latent = encode_logvar_latent(encoded)
+            mean_vel = encode_mean_vel(encoded)
+            logvar_vel = encode_logvar_vel(encoded)
+            code_latent = reparameterise(mean_latent,logvar_latent)
+            code_vel = reparameterise(mean_vel,logvar_vel)
+            
+            code = torch.cat((code_vel,code_latent),dim=-1)
+            decode = None
+            return (code),(code_vel,code_latent),(decode),(mean_vel,logvar_vel,mean_latent,logvar_latent)
+
+
+
+        # h = encoder(obs["obs_history"].to('cpu').float())
+        # mu = fc_mu(h)
+        # log_var = fc_var(h)
+        # std = torch.exp(0.5 * log_var)
+        # eps = torch.randn_like(std)
+        # latent = mu + eps * std
+        # print(latent.shape,'----------------------')
+        # # action = actor(torch.cat((obs["obs"].to('cpu'), latent), dim=-1))
+        # action = actor(torch.cat((latent, obs["obs"].to('cpu')), dim=-1))
+        # info['latent'] = latent
         return action
 
     return policy
