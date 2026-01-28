@@ -192,63 +192,39 @@ def export_policy_as_jit(actor_critic, path):
 
 def export_policy_as_jit_actor(actor_critic, path):
         os.makedirs(path, exist_ok=True)
-        path = os.path.join(path, 'actor_dwaq.pt')
-        model = copy.deepcopy(actor_critic.actor).to('cpu')
-        print("policy model",model)        
+        path = os.path.join(path, 'actor.pt')
+        model = copy.deepcopy(actor_critic.actor).to('cpu')     
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path)
 
 def export_policy_as_jit_encoder(vae, path):
         os.makedirs(path, exist_ok=True)
-        path1 = os.path.join(path, 'encoder_dwaq.pt')
+        path1 = os.path.join(path, 'encoder.pt')
         model = copy.deepcopy(vae.encoder).to('cpu')
-        print('save1')
-        print("encoder model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path1)
 
-        path2 = os.path.join(path, 'latent_mu_dwaq.pt')
+        path2 = os.path.join(path, 'encode_mean_latent.pt')
         model = copy.deepcopy(vae.encode_mean_latent).to('cpu')
-        print('save2')
-        print("latent mu model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path2)
 
-        path6 = os.path.join(path, 'encoder_mu_dwaq.pt')
-        model = copy.deepcopy(vae.encode_mean_latent).to('cpu')
-        print('save3')
-        print("encoder_mu_dwaq model",model)
-        traced_script_module = torch.jit.script(model)
-        traced_script_module.save(path6)
 
-
-        path7 = os.path.join(path, 'encoder_var_dwaq.pt')
+        path3 = os.path.join(path, 'encode_logvar_latent.pt')
         model = copy.deepcopy(vae.encode_logvar_latent).to('cpu')
-        print('save4')
-        print("encoder_var_dwaq model",model)
-        traced_script_module = torch.jit.script(model)
-        traced_script_module.save(path7)
-
-
-
-        path3 = os.path.join(path, 'latent_var_dwaq.pt')
-        model = copy.deepcopy(vae.encode_logvar_latent).to('cpu')
-        print("latent var model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path3)
 
-        path4 = os.path.join(path, 'vel_mu_dwaq.pt')
+        path4 = os.path.join(path, 'encode_mean_vel.pt')
         model = copy.deepcopy(vae.encode_mean_vel).to('cpu')
-        print("vel mu model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path4)
 
-        path5 = os.path.join(path, 'vel_var_dwaq.pt')
+        path5 = os.path.join(path, 'encode_logvar_vel.pt')
         model = copy.deepcopy(vae.encode_logvar_vel).to('cpu')
-        print("vel var model",model)
         traced_script_module = torch.jit.script(model)
         traced_script_module.save(path5)
-
+        
 
 
 
